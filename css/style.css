@@ -40,3 +40,68 @@ body {
     font-size: 20px;
     line-height: 1.2;
 }
+
+/* ---- 原始数据卡片：MQTT 连接栏、状态、数据框 ---- */
+.mqtt-bar {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.mqtt-bar button {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 8px;
+    background-color: white;
+    color: rgb(103, 103, 255);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mqtt-bar button:hover {
+    background-color: rgb(228, 228, 255);
+}
+
+.mqtt-bar button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.mqtt-status {
+    margin-top: 10px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.mqtt-status.connected {
+    color: rgb(150, 255, 190);
+}
+
+.mqtt-status.error {
+    color: rgb(255, 180, 180);
+}
+
+.raw-data {
+    margin-top: 8px;
+    height: 220px;
+    overflow-y: auto;         /* 消息多了可以滚动 */
+    padding: 10px;
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.25);
+    color: rgb(234, 240, 255);
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;    /* 保留 JSON 换行和缩进 */
+    word-break: break-all;
+}
+
+.raw-data:empty::before {
+    content: '暂无消息…';
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.line-time {
+    color: rgb(160, 180, 255);
+}

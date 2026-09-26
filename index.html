@@ -36,8 +36,19 @@
 					<h1 class="card-title">
 						原始数据
 					</h1>
+					<!-- 账号密码已写死在 js/main.js 的 MQTT_CONFIG 里，打开页面自动连接 -->
+					<div class="mqtt-bar">
+						<button id="mqtt-connect" type="button">连接</button>
+					</div>
+					<div class="mqtt-status" id="mqtt-status">未连接</div>
+					<!-- 所有订阅到的消息都会实时追加到这个框里 -->
+					<div class="raw-data" id="raw-data"></div>
 				</div>
 			</div>
 		</div>
+
+		<!-- MQTT.js：浏览器端通过 WebSocket 连接 MQTT 服务器 -->
+		<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+		<script src="./js/main.js"></script>
 	</body>
 </html>
