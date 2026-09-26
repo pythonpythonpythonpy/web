@@ -3,37 +3,40 @@
 	<head>
 		<meta charset="utf-8">
 		<title>智能头盔管理平台</title>
+		<link rel="stylesheet" href="./css/style.css">
 	</head>
 
 	<body>
 		<div>
-			<img src="title.png" alt="智能头盔管理平台">
+			<img src="./file/title.jpg" alt="智能头盔管理平台">
 		</div>
-		<div style="float: left;">
-			<img src="http://api.tianditu.gov.cn/staticimage?
-				center=116.40,39.93
-				&width=1000
-				&height=650
-				&zoom=12
-				&layers=vec_c,cva_c
-				&markers=116.34867,39.94593
-				&tk=be0a7553c81927d557b83f4690dd33f7" alt="地图">
-		</div>
-		<div style="float: right;">
-			<div>
-				<h1>
-					骑行状态
-				</h1>
+		<div class="box">
+			<div class="map">
+				<img src="http://api.tianditu.gov.cn/staticimage?
+					center=116.40,39.93
+					&width=1000
+					&height=590
+					&zoom=12
+					&layers=vec_c,cva_c
+					&markers=116.34867,39.94593
+					&tk=be0a7553c81927d557b83f4690dd33f7" alt="地图">
 			</div>
-			<div>
-				<h1>
-					当前位置
-				</h1>
-			</div>
-			<div>
-				<h1>
-					原始数据
-				</h1>
+			<div class="card-father">
+				<div class="card">
+					<h1 class="card-title">
+						骑行状态
+					</h1>
+				</div>
+				<div class="card">
+					<h1 class="card-title">
+						当前位置
+					</h1>
+				</div>
+				<div class="card">
+					<h1 class="card-title">
+						原始数据
+					</h1>
+				</div>
 			</div>
 		</div>
 	</body>

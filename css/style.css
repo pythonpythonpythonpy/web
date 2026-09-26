@@ -1,0 +1,42 @@
+/* 让 width 包含 padding 和边框，布局更好算 */
+* {
+    box-sizing: border-box;
+}
+
+/* 给整个页面加个背景色 */
+body {
+    background-color: rgb(240, 242, 245);
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;           /* 占满屏幕高度 */
+    margin: 0;
+}
+
+.box {
+    display: flex;
+    flex-direction: row
+}
+
+.card-father{
+    margin-left: 20px;
+}
+
+/* 设计卡片样式 */
+.card {
+    background-color: rgb(103, 103, 255);
+    width: 480px;              /* 卡片总宽度 */
+    min-height: 200px;         /* 卡片总高度 */
+    border-radius: 15px;      /* 圆角 */
+    border-style: solid;
+    border-color: rgb(240, 242, 245);
+    border-width: 5px;
+    padding: 20px;                /* 内边距 */
+}
+
+.card-title {
+    color: white;
+    margin: 0;        /* 去掉 h1 自带的上下外边距 */
+    font-size: 20px;
+    line-height: 1.2;
+}
