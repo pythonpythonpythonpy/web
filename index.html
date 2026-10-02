@@ -13,12 +13,12 @@
 		<div class="box">
 			<div class="map">
 				<img id="map-image" src="http://api.tianditu.gov.cn/staticimage?
-					center=116.40,39.93
+					center=112.5,23.5
 					&width=1000
 					&height=590
 					&zoom=12
 					&layers=vec_c,cva_c
-					&markers=116.34867,39.94593
+					&markers=112.5,23.5
 					&tk=be0a7553c81927d557b83f4690dd33f7" alt="地图">
 			</div>
 			<div class="card-father">
@@ -43,11 +43,11 @@
 					<h1 class="card-title">当前位置</h1>
 					<div class="GPS">
 						<p style="color:rgb(255,255,255);font-size:25px;margin-left:5px">经度:</p>
-						<p id="longitude-text" style="color:rgb(255,255,255);font-size:25px;margin-left:5px">116.40</p>
+						<p id="longitude-text" style="color:rgb(255,255,255);font-size:25px;margin-left:5px">112.5</p>
 					</div>
 					<div class="GPS">
 						<p style="color:rgb(255,255,255);font-size:25px;margin-left:5px">纬度:</p>
-						<p id="latitude-text" style="color:rgb(255,255,255);font-size:25px;margin-left:5px">39.93</p>
+						<p id="latitude-text" style="color:rgb(255,255,255);font-size:25px;margin-left:5px">23.5</p>
 					</div>
 				</div>
 				<div class="card">
@@ -67,7 +67,6 @@
 		<script src="https://registry.npmmirror.com/mqtt/5.10.1/files/dist/mqtt.min.js"></script>
 		<!-- d1.js 是 ES Module，所以下面两个脚本必须用 type="module" 引入 -->
 		<script type="module" src="./js/mqtt.js"></script>
-		<script src="./js/updata.js"></script>
 		<script type="module" src="./js/main.js"></script>
 	</body>
 </html>

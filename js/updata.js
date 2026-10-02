@@ -4,10 +4,10 @@ const helmet_text = document.getElementById('helmet-text');
 const ride_text = document.getElementById('ride-text');
 const longitude_text = document.getElementById('longitude-text');
 const latitude_text = document.getElementById('latitude-text');
-const map_image = document.querySelector('map-image');
+const map_image = document.getElementById('map-image');
 
-function Status_Update(Helmet, Ride) {
-    if (Helmet === true) {
+export function Status_Update(Helmet, Ride) {
+    if (Helmet === 1) {
         helmet_status.style.background = 'rgb(0, 255, 0)';
         helmet_text.textContent = '在线';
     }else{
@@ -15,16 +15,19 @@ function Status_Update(Helmet, Ride) {
         helmet_text.textContent = '离线';
     }
 
-    if (Ride === true) {
+    if (Ride === 1) {
         ride_status.style.background = 'rgb(0, 255, 0)';
         ride_text.textContent = '安全';
-    }else{
+    }else if (Ride === 2) {
+        ride_status.style.background = 'rgb(127, 127, 127)';
+        ride_text.textContent = '未知';
+    }else {
         ride_status.style.background = 'rgb(255, 0, 0)';
         ride_text.textContent = '危险';
     }
 }
 
-function GPS_Update(Longitude, Latitude) {
+export function GPS_Update(Longitude, Latitude) {
     longitude_text.textContent = Longitude;
     latitude_text.textContent = Latitude;
     map_image.src = `http://api.tianditu.gov.cn/staticimage?
