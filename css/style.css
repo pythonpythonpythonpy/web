@@ -47,6 +47,11 @@ body {
     gap: 10px;
 }
 
+.GPS {
+    display: flex;
+    align-items: center;
+}
+
 /* ---- 原始数据卡片：MQTT 连接栏、状态、数据框 ---- */
 .mqtt-bar {
     display: flex;
