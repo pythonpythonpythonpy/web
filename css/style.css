@@ -37,8 +37,14 @@ body {
 .card-title {
     color: white;
     margin: 0;        /* 去掉 h1 自带的上下外边距 */
-    font-size: 20px;
+    font-size: 30px;
     line-height: 1.2;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 /* ---- 原始数据卡片：MQTT 连接栏、状态、数据框 ---- */

@@ -24,6 +24,20 @@
 			<div class="card-father">
 				<div class="card">
 					<h1 class="card-title">骑行状态</h1>
+					<div class="status">
+						<div style="margin-left:20px"></div>
+						<div id="helmet-status" style="width: 25px; height: 25px; border-radius: 50%; background: rgb(0, 255, 0);margin-top: 15px;"></div>
+						<p id="helmet-text" style="color:rgb(255,255,255);margin-top:30px">在线</p>
+						<div style="margin-left:200px"></div>
+						<div id="ride-status" style="width: 25px; height: 25px; border-radius: 50%; background: rgb(0, 255, 0);margin-top: 15px;"></div>
+						<p id="ride-text" style="color:rgb(255,255,255);margin-top:30px">安全</p>
+					</div>
+					<div class="status">
+						<div style="margin-left:20px"></div>
+						<p style="color:rgb(255,255,255);font-size:20px;margin-left:5px">头盔状态</p>
+						<div style="margin-left:180px"></div>
+						<p style="color:rgb(255,255,255);font-size:20px;margin-left:5px">骑行状态</p>
+					</div>
 				</div>
 				<div class="card">
 					<h1 class="card-title">当前位置</h1>
@@ -43,6 +57,8 @@
 
 		<!-- MQTT.js：浏览器端通过 WebSocket 连接 MQTT 服务器 -->
 		<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+		<script src="./js/mqtt.js"></script>
+		<script src="./js/status.js"></script>
 		<script src="./js/main.js"></script>
 	</body>
 </html>
