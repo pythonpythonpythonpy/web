@@ -3,53 +3,145 @@
     box-sizing: border-box;
 }
 
+/* hidden 属性必须压过下面的 display 规则，否则隐藏不生效 */
+[hidden] {
+    display: none !important;
+}
+
 /* 给整个页面加个背景色 */
 body {
     background-color: rgb(240, 242, 245);
     font-family: 'Segoe UI', sans-serif;
     display: flex;
     flex-direction: column;
-    height: 100vh;           /* 占满屏幕高度 */
+    min-height: 100vh;
     margin: 0;
+    padding: 0 16px 24px;
+}
+
+.page-title {
+    margin: 16px 0 0;
+}
+
+.page-title img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* ---- 缺少配置时的黄色提示条 ---- */
+.config-hint {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border: 1px solid rgb(255, 213, 145);
+    border-radius: 10px;
+    background: rgb(255, 247, 230);
+    color: rgb(140, 90, 0);
+    font-size: 14px;
+    line-height: 1.7;
 }
 
 .box {
     display: flex;
-    flex-direction: row
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 20px;
+    margin-top: 16px;
 }
 
-.card-father{
-    margin-left: 20px;
+/* ---- 地图 ---- */
+.map {
+    flex: 1 1 420px;
+    min-width: 0;
+}
+
+.map img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 15px;
+}
+
+.map-hint {
+    margin: 0;
+    padding: 40px 16px;
+    border-radius: 15px;
+    background: rgb(228, 228, 255);
+    color: rgb(80, 80, 140);
+    font-size: 14px;
+    text-align: center;
+}
+
+.card-father {
+    display: flex;
+    flex: 0 1 480px;
+    flex-direction: column;
+    gap: 20px;
 }
 
 /* 设计卡片样式 */
 .card {
     background-color: rgb(103, 103, 255);
-    width: 480px;              /* 卡片总宽度 */
-    min-height: 200px;         /* 卡片总高度 */
-    border-radius: 15px;      /* 圆角 */
-    border-style: solid;
-    border-color: rgb(240, 242, 245);
-    border-width: 5px;
-    padding: 20px;                /* 内边距 */
+    width: 100%;
+    min-height: 200px;
+    border-radius: 15px;
+    padding: 20px;
 }
 
 .card-title {
     color: white;
-    margin: 0;        /* 去掉 h1 自带的上下外边距 */
+    margin: 0; /* 去掉标题自带的上下外边距 */
     font-size: 30px;
     line-height: 1.2;
 }
 
-.status {
+/* ---- 状态灯（两列网格，不用内联 margin 摆位置） ---- */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    row-gap: 6px;
+    margin-top: 15px;
+}
+
+.status-cell {
     display: flex;
     align-items: center;
     gap: 10px;
+    min-width: 0;
 }
 
-.GPS {
+.status-cell--label {
+    color: rgb(255, 255, 255);
+    font-size: 20px;
+}
+
+.dot {
+    flex: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: rgb(0, 255, 0);
+}
+
+.status-value {
+    color: rgb(255, 255, 255);
+    font-size: 20px;
+}
+
+/* ---- 经纬度 ---- */
+.gps-row {
     display: flex;
     align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.gps-label,
+.gps-value {
+    margin: 0;
+    color: rgb(255, 255, 255);
+    font-size: 25px;
 }
 
 /* ---- 原始数据卡片：MQTT 连接栏、状态、数据框 ---- */
@@ -96,7 +188,7 @@ body {
 .raw-data {
     margin-top: 8px;
     height: 220px;
-    overflow-y: auto;         /* 消息多了可以滚动 */
+    overflow-y: auto; /* 消息多了可以滚动 */
     padding: 10px;
     border-radius: 10px;
     background-color: rgba(0, 0, 0, 0.25);
@@ -104,7 +196,7 @@ body {
     font-family: Consolas, 'Courier New', monospace;
     font-size: 12px;
     line-height: 1.6;
-    white-space: pre-wrap;    /* 保留 JSON 换行和缩进 */
+    white-space: pre-wrap; /* 保留 JSON 换行和缩进 */
     word-break: break-all;
 }
 
@@ -115,4 +207,20 @@ body {
 
 .line-time {
     color: rgb(160, 180, 255);
+}
+
+/* ---- 窄屏：卡片占满整行，字号收一点 ---- */
+@media (max-width: 960px) {
+    .card-father {
+        flex: 1 1 100%;
+    }
+
+    .card-title {
+        font-size: 24px;
+    }
+
+    .gps-label,
+    .gps-value {
+        font-size: 20px;
+    }
 }

@@ -4,18 +4,21 @@
  * 零依赖 / Node 与浏览器通用（ES Module）
  * 内置：超时、重试、分页、批量事务、字段校验、友好报错
  *
- * 配置（Node，环境变量）：
- *   D1_BASE   = https://d1.api.shenxv.dpdns.org
- *   D1_TOKEN  = Worker 里设置的 API_TOKEN
+ * 令牌不写死在源码里，按下面的顺序读取（后者覆盖前者）：
+ *   1. Node 环境变量 D1_BASE / D1_TOKEN
+ *   2. createD1({ base, token }) 或 d1.setBase() / d1.setToken()
+ *   3. 浏览器端由 js/main.js 从 config.json 注入（见 README.md）
  */
 
 /* ============================== 配置 ============================== */
 
 const DEFAULT_BASE = "https://d1.api.shenxv.dpdns.org";
-const DEFAULT_TOKEN = "uH5$nS2)jM5?qW2_uD4@lM8[zP6:jJ5_oH7[kO5[hY8}jT1]aA9:uI9&eG0,mA8|";
+
+// 浏览器里没有 process，globalThis.process 是 undefined，可选链会安全地返回 undefined
+const ENV_BASE = globalThis.process?.env?.D1_BASE || "";
+const ENV_TOKEN = globalThis.process?.env?.D1_TOKEN || "";
 
 const DEFAULTS = {
-  base: "https://d1.api.shenxv.dpdns.org",
   timeout: 10000,  // 单次请求超时(ms)
   retries: 2,      // 失败重试次数（0 = 不重试）
   pageSize: 100,   // iterate() 每页条数（Worker 上限 500）
@@ -42,6 +45,9 @@ export class D1Error extends Error {
 
   /** 中文排查提示 */
   get hint() {
+    if (String(this.message).includes("未配置 D1 令牌")) {
+      return "复制 config.example.json 为 config.json 并填写 d1.token，或设置环境变量 D1_TOKEN";
+    }
     const d = String(this.message).toLowerCase();
     if (this.status === 401) return "令牌不对：客户端 D1_TOKEN ≠ Worker 变量 API_TOKEN";
     if (this.status === 403) return "权限不足：/sql 需要 admin 令牌且 Worker 里 SQL_PROXY=1";
@@ -81,8 +87,8 @@ function toBind(v) {
  */
 export function createD1(options = {}) {
   const cfg = {
-    base: (options.base ?? DEFAULT_BASE).replace(/\/+$/, ""),
-    token: options.token ?? DEFAULT_TOKEN,
+    base: (options.base || ENV_BASE || DEFAULT_BASE).replace(/\/+$/, ""),
+    token: options.token ?? ENV_TOKEN,
     timeout: options.timeout ?? DEFAULTS.timeout,
     retries: options.retries ?? DEFAULTS.retries,
     // bind 到 globalThis：直接把 fetch 当对象方法调用会因 this 不对而抛 Illegal invocation
@@ -103,6 +109,13 @@ export function createD1(options = {}) {
   }
 
   async function request(path, { method = "GET", body, params, retries, timeout } = {}) {
+    if (!cfg.token) {
+      throw new D1Error(
+        "未配置 D1 令牌：请复制 config.example.json 为 config.json 并填写 d1.token（Node 下也可用环境变量 D1_TOKEN）",
+        { route: path },
+      );
+    }
+
     const url = buildUrl(path, params);
     const maxAttempts = (retries ?? cfg.retries) + 1;
     const ms = timeout ?? cfg.timeout;
@@ -341,6 +354,13 @@ export function createD1(options = {}) {
 
   return {
     config: cfg,
+    /** 运行期设置连接地址 / 令牌（浏览器端由 main.js 从 config.json 注入） */
+    setBase(base) {
+      if (base) cfg.base = String(base).replace(/\/+$/, "");
+    },
+    setToken(token) {
+      cfg.token = token ? String(token) : "";
+    },
     request,      // 逃生舱：直接打任意路径
     health,
     tables,
@@ -447,7 +467,7 @@ export const rawData = {
         const [latitude, longitude, status] = line.split(",").map((s) => s.trim());
         return { latitude, longitude, status };
       });
-    return this.addMany(records);
+    return rawData.addMany(records);
   },
 
   /* ---------------------------- 查询 ---------------------------- */
@@ -599,11 +619,25 @@ export async function selfTest({ write = false } = {}) {
 }
 
 /* ------------------- 直接运行本文件时自动自检 ------------------- */
-if (
+const isDirectRun =
   typeof process !== "undefined" &&
-  process.argv?.[1] &&
-  /[\\/]d1\.js$/.test(process.argv[1])
-) {
+  Array.isArray(process.argv) &&
+  !!process.argv[1] &&
+  /[\\/]d1\.js$/.test(process.argv[1]);
+
+if (isDirectRun) {
+  // 先读项目根目录的 config.json，再用环境变量覆盖
+  try {
+    const { readFileSync } = await import("node:fs");
+    const raw = JSON.parse(readFileSync(new URL("../config.json", import.meta.url), "utf8"));
+    if (raw?.d1?.base) d1.setBase(raw.d1.base);
+    if (raw?.d1?.token) d1.setToken(raw.d1.token);
+  } catch {
+    // 没有 config.json 就只用环境变量
+  }
+  if (process.env.D1_BASE) d1.setBase(process.env.D1_BASE);
+  if (process.env.D1_TOKEN) d1.setToken(process.env.D1_TOKEN);
+
   const failed = await selfTest({ write: process.argv.includes("--write") });
   process.exit(failed ? 1 : 0); // 顺手消掉 Node 24 on Windows 的断言噪音
 }

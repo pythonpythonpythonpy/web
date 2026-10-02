@@ -2,71 +2,70 @@
 <html lang="zh-CN">
 	<head>
 		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>智能头盔管理平台</title>
 		<link rel="stylesheet" href="./css/style.css">
 	</head>
 
 	<body>
-		<div>
+		<h1 class="page-title">
 			<img src="./file/title.jpg" alt="智能头盔管理平台">
-		</div>
-		<div class="box">
-			<div class="map">
-				<img id="map-image" src="http://api.tianditu.gov.cn/staticimage?
-					center=112.5,23.5
-					&width=1000
-					&height=590
-					&zoom=12
-					&layers=vec_c,cva_c
-					&markers=112.5,23.5
-					&tk=be0a7553c81927d557b83f4690dd33f7" alt="地图">
-			</div>
+		</h1>
+
+		<!-- 缺少配置时显示提示，内容由 js/main.js 填充 -->
+		<div id="config-hint" class="config-hint" hidden></div>
+
+		<main class="box">
+			<section class="map">
+				<!-- 地图地址由 js/update.js 根据 config.json 拼出来，不再写死在 HTML 里 -->
+				<img id="map-image" alt="头盔当前位置地图" hidden>
+				<p id="map-hint" class="map-hint">地图加载中…</p>
+			</section>
+
 			<div class="card-father">
-				<div class="card">
-					<h1 class="card-title">骑行状态</h1>
-					<div class="status">
-						<div style="margin-left:20px"></div>
-						<div id="helmet-status" style="width: 25px; height: 25px; border-radius: 50%; background: rgb(0, 255, 0);margin-top: 15px;"></div>
-						<p id="helmet-text" style="color:rgb(255,255,255);margin-top:30px">在线</p>
-						<div style="margin-left:200px"></div>
-						<div id="ride-status" style="width: 25px; height: 25px; border-radius: 50%; background: rgb(0, 255, 0);margin-top: 15px;"></div>
-						<p id="ride-text" style="color:rgb(255,255,255);margin-top:30px">安全</p>
+				<section class="card">
+					<h2 class="card-title">骑行状态</h2>
+					<div class="status-grid">
+						<div class="status-cell">
+							<span id="helmet-status" class="dot"></span>
+							<span id="helmet-text" class="status-value">在线</span>
+						</div>
+						<div class="status-cell">
+							<span id="ride-status" class="dot"></span>
+							<span id="ride-text" class="status-value">安全</span>
+						</div>
+						<div class="status-cell status-cell--label">头盔状态</div>
+						<div class="status-cell status-cell--label">骑行状态</div>
 					</div>
-					<div class="status">
-						<div style="margin-left:20px"></div>
-						<p style="color:rgb(255,255,255);font-size:20px;margin-left:5px">头盔状态</p>
-						<div style="margin-left:180px"></div>
-						<p style="color:rgb(255,255,255);font-size:20px;margin-left:5px">骑行状态</p>
+				</section>
+
+				<section class="card">
+					<h2 class="card-title">当前位置</h2>
+					<div class="gps-row">
+						<span class="gps-label">经度:</span>
+						<span id="longitude-text" class="gps-value">112.5</span>
 					</div>
-				</div>
-				<div class="card">
-					<h1 class="card-title">当前位置</h1>
-					<div class="GPS">
-						<p style="color:rgb(255,255,255);font-size:25px;margin-left:5px">经度:</p>
-						<p id="longitude-text" style="color:rgb(255,255,255);font-size:25px;margin-left:5px">112.5</p>
+					<div class="gps-row">
+						<span class="gps-label">纬度:</span>
+						<span id="latitude-text" class="gps-value">23.5</span>
 					</div>
-					<div class="GPS">
-						<p style="color:rgb(255,255,255);font-size:25px;margin-left:5px">纬度:</p>
-						<p id="latitude-text" style="color:rgb(255,255,255);font-size:25px;margin-left:5px">23.5</p>
-					</div>
-				</div>
-				<div class="card">
-					<h1 class="card-title">原始数据</h1>
-					<!-- 账号密码已写死在 js/main.js 的 MQTT_CONFIG 里，打开页面自动连接 -->
+				</section>
+
+				<section class="card">
+					<h2 class="card-title">原始数据</h2>
 					<div class="mqtt-bar">
 						<button id="mqtt-connect" type="button">连接</button>
 					</div>
 					<div class="mqtt-status" id="mqtt-status">未连接</div>
 					<!-- 所有订阅到的消息都会实时追加到这个框里 -->
 					<div class="raw-data" id="raw-data"></div>
-				</div>
+				</section>
 			</div>
-		</div>
+		</main>
 
 		<!-- MQTT.js：浏览器端通过 WebSocket 连接 MQTT 服务器 -->
 		<script src="https://registry.npmmirror.com/mqtt/5.10.1/files/dist/mqtt.min.js"></script>
-		<!-- d1.js 是 ES Module，所以下面两个脚本必须用 type="module" 引入 -->
-		<script type="module" src="./js/mqtt.js"></script>
+		<!-- main.js 是 ES Module，其余模块由它 import，所以只需这一个入口 -->
 		<script type="module" src="./js/main.js"></script>
 	</body>
 </html>

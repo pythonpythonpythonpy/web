@@ -1,0 +1,12 @@
+{
+  "name": "smart-helmet-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "智能头盔管理平台前端（MQTT over WebSocket + Cloudflare D1 + 天地图）",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "selftest": "node js/d1.js",
+    "selftest:write": "node js/d1.js --write"
+  }
+}

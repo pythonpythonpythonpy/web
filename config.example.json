@@ -1,0 +1,26 @@
+{
+  "mqtt": {
+    "url": "wss://nb8cea59.ala.cn-shenzhen.emqxsl.cn:8084/mqtt",
+    "topic": "topic/#",
+    "fallbackTopic": "+/#",
+    "username": "web",
+    "password": "在这里填写 MQTT 密码",
+    "maxLines": 500,
+    "maxWritesPerSecond": 5
+  },
+  "d1": {
+    "base": "https://d1.api.shenxv.dpdns.org",
+    "token": "在这里填写 D1 的 API_TOKEN"
+  },
+  "map": {
+    "endpoint": "https://api.tianditu.gov.cn/staticimage",
+    "tiandituToken": "在这里填写天地图密钥",
+    "zoom": 12,
+    "width": 1000,
+    "height": 590,
+    "layers": "vec_c,cva_c"
+  },
+  "pollIntervalMs": 10000,
+  "staleAfterMs": 1800000,
+  "dbTimeZone": "utc"
+}
