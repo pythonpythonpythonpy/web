@@ -64,9 +64,10 @@
 		</div>
 
 		<!-- MQTT.js：浏览器端通过 WebSocket 连接 MQTT 服务器 -->
-		<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
-		<script src="./js/mqtt.js"></script>
+		<script src="https://registry.npmmirror.com/mqtt/5.10.1/files/dist/mqtt.min.js"></script>
+		<!-- d1.js 是 ES Module，所以下面两个脚本必须用 type="module" 引入 -->
+		<script type="module" src="./js/mqtt.js"></script>
 		<script src="./js/updata.js"></script>
-		<script src="./js/main.js"></script>
+		<script type="module" src="./js/main.js"></script>
 	</body>
 </html>

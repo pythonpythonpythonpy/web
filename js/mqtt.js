@@ -5,6 +5,8 @@
  *       “WebSocket over TLS/SSL 端口 8084”，地址形如 wss://xxx:8084/mqtt
  */
 
+import { rawData } from './d1.js';
+
 // ==================== 配置 ====================
 const MQTT_CONFIG = {
 	// EMQX 部署的连接地址（部署概览里可以复制到）
@@ -115,8 +117,18 @@ function appendMessage(payload) {
 	rawDataEl.scrollTop = rawDataEl.scrollHeight;
 }
 
+function saveToDb(payload) {
+    let data;
+    try {
+        data = JSON.parse(decodePayload(payload));
+    } catch {
+        return; // 不是 JSON，只显示不入库
+    }
+    rawData.add(data).catch((err) => console.warn('写入数据库失败：', err.message));
+}
+
 // ==================== 连接 ====================
-function connect() {
+export function connect() {
 	const clientId = 'helmet-web-' + Math.random().toString(16).slice(2, 10);
 
 	setStatus('正在连接…');
@@ -155,9 +167,10 @@ function connect() {
 		});
 	});
 
-	// 收到消息 -> 显示到框里
+	// 收到消息 -> 显示到框里，同时写入数据库
 	client.on('message', (topic, payload) => {
 		appendMessage(payload);
+		saveToDb(payload);
 	});
 
 	client.on('reconnect', () => {

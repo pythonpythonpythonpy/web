@@ -85,7 +85,8 @@ export function createD1(options = {}) {
     token: options.token ?? DEFAULT_TOKEN,
     timeout: options.timeout ?? DEFAULTS.timeout,
     retries: options.retries ?? DEFAULTS.retries,
-    fetch: options.fetch ?? globalThis.fetch, // 便于测试时注入假 fetch
+    // bind 到 globalThis：直接把 fetch 当对象方法调用会因 this 不对而抛 Illegal invocation
+    fetch: (options.fetch ?? globalThis.fetch).bind(globalThis),
   };
 
   /* ---------------- 底层请求：超时 + 重试 + 统一错误 ---------------- */
