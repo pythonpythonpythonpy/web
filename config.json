@@ -1,0 +1,16 @@
+{
+  "mqtt": {
+    "url": "wss://nb8cea59.ala.cn-shenzhen.emqxsl.cn:8084/mqtt",
+    "topic": "topic/#",
+    "fallbackTopic": "+/#",
+    "username": "web",
+    "password": "123"
+  },
+  "d1": {
+    "base": "https://d1.api.shenxv.dpdns.org",
+    "token": "uH5$nS2)jM5?qW2_uD4@lM8[zP6:jJ5_oH7[kO5[hY8}jT1]aA9:uI9&eG0,mA8|"
+  },
+  "map": {
+    "tiandituToken": "be0a7553c81927d557b83f4690dd33f7"
+  }
+}
