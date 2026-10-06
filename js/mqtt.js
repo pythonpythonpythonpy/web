@@ -117,32 +117,66 @@ function appendMessage(payload) {
 	rawDataEl.scrollTop = rawDataEl.scrollHeight;
 }
 
+// 会写进数据库的业务字段（对应 d1.js 里 rawData.add 接受的字段）
+const DB_FIELDS = ['status', 'longitude', 'latitude'];
+
+// 把内容压成稳定的字符串（对象 key 排好序，数字类型统一），
+// 否则 String({...}) 永远是 "[object Object]"，不同内容会算出同一个哈希
+function canonicalize(value) {
+	if (value === null || value === undefined) return 'null';
+	if (typeof value !== 'object') return JSON.stringify(value);
+	if (Array.isArray(value)) return '[' + value.map(canonicalize).join(',') + ']';
+	return '{' + Object.keys(value).sort().map((k) => JSON.stringify(k) + ':' + canonicalize(value[k])).join(',') + '}';
+}
+
 async function checkData(input) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(String(input));
-  
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
-  
-  return hashHex;
+	const encoder = new TextEncoder();
+	const data = encoder.encode(String(input));
+
+	const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+
+	const hashArray = Array.from(new Uint8Array(hashBuffer));
+	const hashHex = hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('');
+
+	return hashHex;
+}
+
+// 取出真正会入库的字段值；id、created_at 由数据库生成，不参与去重比较
+function recordValues(record) {
+	return DB_FIELDS.map((key) => {
+		const value = record == null ? null : record[key];
+		if (value === undefined || value === null || value === '') return null;
+		if (key === 'status') return String(value);
+		const n = Number(value); // 数据库里是数字，这里也转成数字，避免 "23.5" 和 23.5 被当成不同内容
+		return Number.isFinite(n) ? n : null;
+	});
 }
 
 async function saveToDb(payload) {
-    let data;
-	let row;
-    try {
-        data = JSON.parse(decodePayload(payload));
-		sha256Data = await checkData(data);
-		row = (await rawData.latest(1))[0];
-		sha256Row = await checkData(row);
-		if (sha256Data !== sha256Row) {
-			rawData.add(data).catch((err) => console.warn('写入数据库失败：', err.message));
+	let data;
+	try {
+		data = JSON.parse(decodePayload(payload));
+	} catch (err) {
+		return; // 不是 JSON，只显示不入库
+	}
+	if (!data || typeof data !== 'object' || Array.isArray(data)) return;
+
+	const values = recordValues(data);
+	if (values.every((v) => v === null)) return; // 没有可入库的字段
+
+	try {
+		const latest = (await rawData.latest(1))[0];
+		// 内容和最新一条完全一样就不再重复入库
+		if (latest) {
+			const newHash = await checkData(canonicalize(values));
+			const oldHash = await checkData(canonicalize(recordValues(latest)));
+			if (newHash === oldHash) return;
 		}
-    } catch {
-        return; // 不是 JSON，只显示不入库
-    }
+
+		await rawData.add(data);
+	} catch (err) {
+		console.warn('写入数据库失败：', err.message);
+	}
 }
 
 // ==================== 连接 ====================
