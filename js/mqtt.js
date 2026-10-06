@@ -164,6 +164,13 @@ async function saveToDb(payload) {
 		return;
 	}
 
+	if (data.status === 'dangerous') {
+		console.log('危险报文：直接上传', data);
+		await rawData.add(data);
+		return;
+
+	}
+
 	const key = canonicalize(values);
 	const second = Math.floor(Date.now() / 1000);
 
