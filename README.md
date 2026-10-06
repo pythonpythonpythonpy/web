@@ -6,7 +6,7 @@
 ## 功能
 
 - 实时显示订阅到的 MQTT 原始消息（保留最近 500 条，自动滚动）
-- 把符合 `raw_data` 结构的消息自动写入数据库（字段校验 + 写入限流）
+- 把符合 `raw_data` 结构的消息自动写入数据库（字段校验 + 写入限流；写库前先查库，同一秒只写一条）
 - 每 10 秒读取最新一条记录，刷新「头盔状态 / 骑行状态 / 经纬度 / 地图」
 - 超过 30 分钟没有新数据时自动显示为「离线 / 未知」，地图回到默认位置
 
@@ -20,6 +20,7 @@ js/main.js            入口：读配置、启动轮询、驱动视图
 js/mqtt.js            MQTT 连接、消息展示与入库
 js/update.js          视图渲染（状态灯、经纬度、地图 URL）
 js/d1.js               Cloudflare D1（Worker 中转）访问封装
+js/time.js            数据库时间字符串解析（main.js 与 mqtt.js 共用）
 config.example.json   配置模板（复制成 config.json 后填写）
 file/title.jpg        页面标题图
 ```
@@ -51,7 +52,7 @@ file/title.jpg        页面标题图
 | `mqtt.fallbackTopic` | `topic` 订阅被 ACL 拒绝时的备用主题（默认 `+/#`） |
 | `mqtt.username` / `mqtt.password` | MQTT 账号密码 |
 | `mqtt.maxLines` | 页面最多保留多少条消息 |
-| `mqtt.maxWritesPerSecond` | 每秒最多写库条数（防止消息风暴打爆额度） |
+| `mqtt.maxWritesPerSecond` | 每秒最多写库条数（防止消息风暴打爆额度；同一秒只写一条，所以实际每秒最多写 1 条） |
 | `d1.base` | D1 中转 Worker 的地址 |
 | `d1.token` | Worker 里配置的 `API_TOKEN` |
 | `map.tiandituToken` | 天地图密钥（`tk` 参数） |
@@ -107,5 +108,6 @@ npm run selftest
 ## 已知限制
 
 - 前端直接持有写权限令牌（见上文「安全须知」）。
+- 同一秒判重是「查最新一条记录 + 客户端时钟」实现的：设备与浏览器时钟偏差过大时可能误判；多个标签页在同一瞬间写入时仍可能各写一条（真正原子的判重需要数据库唯一索引或服务端逻辑）。
 - 轮询全量最新记录依赖 `/data` 接口按 `-id` 排序，数据量很大时建议改为按时间区间增量拉取。
 - 地图使用天地图静态图接口，缩放/图层等改动需同步修改 `config.json`。

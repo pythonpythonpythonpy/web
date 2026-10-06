@@ -10,6 +10,7 @@ import { d1, rawData } from './d1.js';
 import { connect } from './mqtt.js';
 import { initMapView, updateStatus, updateGps } from './update.js';
 import { loadConfig, describeMissing } from './config.js';
+import { parseDbTime } from './time.js';
 
 const HELMET = { ONLINE: 1, OFFLINE: 0 };
 const RIDE = { DANGER: 0, SAFE: 1, UNKNOWN: 2 };
@@ -37,23 +38,6 @@ function showConfigHint(missing) {
 		'请复制 config.example.json 为 config.json 并填写对应内容，详见 README.md。';
 }
 
-/**
- * 把数据库里的时间字符串转成时间戳。
- * 实测本项目 created_at 是带 Z 的 ISO 字符串（如 2026-10-02T14:21:25.846Z），
- * Date.parse 能直接正确处理；这里额外兜底 SQLite CURRENT_TIMESTAMP 那种
- * 不带时区的 "YYYY-MM-DD HH:MM:SS"（不加 Z 的话会被按本地时区解析，差 8 小时）。
- */
-function parseDbTime(value) {
-	if (typeof value !== 'string') return NaN;
-
-	const text = value.trim();
-	if (config.dbTimeZone !== 'utc') return Date.parse(text);
-
-	const matched = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(\.\d+)?$/.exec(text);
-	if (matched) return Date.parse(`${matched[1]}T${matched[2]}${matched[3] ?? ''}Z`);
-	return Date.parse(text);
-}
-
 function showFallback() {
 	updateStatus(HELMET.OFFLINE, RIDE.UNKNOWN);
 	updateGps(FALLBACK_POSITION.longitude, FALLBACK_POSITION.latitude, config.map);
@@ -76,7 +60,7 @@ async function refresh() {
 		}
 
 		// 太久没有新数据 -> 视为离线
-		const age = Date.now() - parseDbTime(row.created_at);
+		const age = Date.now() - parseDbTime(row.created_at, config.dbTimeZone === 'utc');
 		if (!Number.isFinite(age) || age > config.staleAfterMs) {
 			showFallback();
 			return;
@@ -94,7 +78,7 @@ async function refresh() {
 	}
 }
 
-connect(config.mqtt);
+connect(config.mqtt, { dbTimeZone: config.dbTimeZone });
 refresh();
 
 const timer = setInterval(() => {

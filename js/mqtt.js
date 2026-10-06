@@ -2,6 +2,7 @@
  * js/mqtt.js —— 通过 WebSocket 连接 MQTT 服务器
  *
  * 把订阅到的消息显示在「原始数据」卡片里，并把符合 raw_data 结构的消息写入数据库。
+ * 写库前会先查数据库：这一秒已经有记录了就跳过，避免设备重复上报写入重复数据。
  *
  * 注意：网页里只能用 WebSocket 接入 MQTT，所以要使用 EMQX 的
  *       “WebSocket over TLS/SSL 端口 8084”，地址形如 wss://xxx:8084/mqtt。
@@ -10,6 +11,7 @@
  */
 
 import { rawData } from './d1.js';
+import { parseDbTime } from './time.js';
 
 const rawDataEl = document.getElementById('raw-data');
 const statusEl = document.getElementById('mqtt-status');
@@ -26,6 +28,11 @@ let hasConnected = false; // 是否成功连接过（用来区分“连不上”
 let windowStartedAt = 0;
 let windowWrites = 0;
 let droppedWrites = 0;
+
+// 同一秒只入库一次：把「查库 → 写库」串行排队，避免并发时各自都查到"这一秒还没有记录"
+let lastQueuedSecond = -1;
+let insertQueue = Promise.resolve();
+let dbTimeZone = 'utc'; // created_at 的存储时区，由 main.js 通过 connect() 传入
 
 /* ==================== 状态提示 ==================== */
 
@@ -131,21 +138,55 @@ function writeAllowed() {
 	return true;
 }
 
+/**
+ * 数据库里最新一条记录落在哪一秒；查不到时间时返回 NaN。
+ * 走 /data 的 order=-id 主键倒序查询，只读 1 行。
+ */
+async function latestDbSecond() {
+	const [latest] = await rawData.latest(1);
+	return latest ? Math.floor(parseDbTime(latest.created_at, dbTimeZone === 'utc') / 1000) : NaN;
+}
+
+/**
+ * 这一秒是否已经入库过了？是就跳过（重复提交 / 刚刷新过页面 / 多标签页都不会重复写）。
+ * 判断依据是数据库里最新一条记录的 created_at，而不是本地计时。
+ */
+async function isSecondTaken() {
+	return (await latestDbSecond()) === Math.floor(Date.now() / 1000);
+}
+
+async function insertOncePerSecond(record) {
+	if (await isSecondTaken()) return false;
+	await rawData.add(record);
+	return true;
+}
+
 function saveToDb(text) {
 	const record = pickRawRecord(text);
 	if (!record) return;
+
+	// 同一秒只排一次队，避免整秒的消息风暴反复查库；真正的判重仍然看数据库
+	const second = Math.floor(Date.now() / 1000);
+	if (second === lastQueuedSecond) return;
 
 	if (!writeAllowed()) {
 		console.warn(`[MQTT] 写入超过 ${config.maxWritesPerSecond} 条/秒，已累计丢弃 ${droppedWrites} 条`);
 		return;
 	}
-	rawData.add(record).catch((err) => console.warn('写入数据库失败：', err.message));
+	lastQueuedSecond = second;
+
+	// 串行执行，让后一条「查库」看到前一条写入后的结果
+	insertQueue = insertQueue.then(() => insertOncePerSecond(record)).catch((err) => {
+		if (lastQueuedSecond === second) lastQueuedSecond = -1; // 查库/写入失败后允许这一秒重试
+		console.warn('写入数据库失败：', err.message);
+	});
 }
 
 /* ==================== 连接 ==================== */
 
-export function connect(mqttConfig) {
+export function connect(mqttConfig, options = {}) {
 	config = mqttConfig;
+	if (options.dbTimeZone) dbTimeZone = options.dbTimeZone;
 
 	if (typeof mqtt === 'undefined') {
 		setStatus('MQTT 库加载失败（CDN 不可用），请检查网络后刷新页面。', 'error');
