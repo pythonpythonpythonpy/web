@@ -120,25 +120,13 @@ function appendMessage(payload) {
 // 会写进数据库的业务字段（对应 d1.js 里 rawData.add 接受的字段）
 const DB_FIELDS = ['status', 'longitude', 'latitude'];
 
-// 把内容压成稳定的字符串（对象 key 排好序，数字类型统一），
-// 否则 String({...}) 永远是 "[object Object]"，不同内容会算出同一个哈希
+// 把内容压成稳定的字符串：对象 key 排序、坐标统一成数字，
+// 这样内容相同就一定会得到相同的字符串，可以直接拿来比较
 function canonicalize(value) {
 	if (value === null || value === undefined) return 'null';
 	if (typeof value !== 'object') return JSON.stringify(value);
 	if (Array.isArray(value)) return '[' + value.map(canonicalize).join(',') + ']';
 	return '{' + Object.keys(value).sort().map((k) => JSON.stringify(k) + ':' + canonicalize(value[k])).join(',') + '}';
-}
-
-async function checkData(input) {
-	const encoder = new TextEncoder();
-	const data = encoder.encode(String(input));
-
-	const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-
-	const hashArray = Array.from(new Uint8Array(hashBuffer));
-	const hashHex = hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('');
-
-	return hashHex;
 }
 
 // 取出真正会入库的字段值；id、created_at 由数据库生成，不参与去重比较
@@ -152,30 +140,50 @@ function recordValues(record) {
 	});
 }
 
+// 上一笔已入库的报文，用来把「同一秒内」的重复报文合并成一条
+let lastWrite = null; // { key, second }
+
 async function saveToDb(payload) {
+	const text = decodePayload(payload);
+
 	let data;
 	try {
-		data = JSON.parse(decodePayload(payload));
+		data = JSON.parse(text);
 	} catch (err) {
-		return; // 不是 JSON，只显示不入库
+		console.log('未入库：报文不是 JSON ->', text);
+		return;
 	}
-	if (!data || typeof data !== 'object' || Array.isArray(data)) return;
+	if (!data || typeof data !== 'object' || Array.isArray(data)) {
+		console.log('未入库：JSON 内容不是对象 ->', data);
+		return;
+	}
 
 	const values = recordValues(data);
-	if (values.every((v) => v === null)) return; // 没有可入库的字段
+	if (values.every((v) => v === null)) {
+		console.log('未入库：报文里没有 status / longitude / latitude ->', data);
+		return;
+	}
+
+	const key = canonicalize(values);
+	const second = Math.floor(Date.now() / 1000);
+
+	// 同一秒内内容相同的报文算重复，直接丢掉；不同秒的即使内容一样也保留。
+	// 这里必须同步判断：同一秒的几条报文是并发处理的，用异步的哈希或查库
+	// 会让它们都以为“还没写过”，结果全部入库
+	if (lastWrite && lastWrite.second === second && lastWrite.key === key) {
+		console.log('未入库：同一秒内的重复报文，跳过 ->', data);
+		return;
+	}
+	lastWrite = { key, second };
 
 	try {
-		const latest = (await rawData.latest(1))[0];
-		// 内容和最新一条完全一样就不再重复入库
-		if (latest) {
-			const newHash = await checkData(canonicalize(values));
-			const oldHash = await checkData(canonicalize(recordValues(latest)));
-			if (newHash === oldHash) return;
-		}
-
 		await rawData.add(data);
+		console.log('写入数据库成功：', data);
 	} catch (err) {
-		console.warn('写入数据库失败：', err.message);
+		if (lastWrite && lastWrite.key === key && lastWrite.second === second) {
+			lastWrite = null; // 写失败就不算写过，下一条照常入库
+		}
+		console.warn('写入数据库失败：', err);
 	}
 }
 

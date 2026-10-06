@@ -23,4 +23,4 @@ async function main() {
 
 connect();
 main();
-const timer = setInterval(main, 10 * 1000);
+const timer = setInterval(main, 5 * 1000);
