@@ -3,6 +3,7 @@
  *
  * 把订阅到的消息显示在「原始数据」卡片里，并把符合 raw_data 结构的消息写入数据库。
  * 写库前会先查数据库：这一秒已经有记录了就跳过，避免设备重复上报写入重复数据。
+ * status 为 dangerous（危险）的消息例外，直接入库，不受「同一秒只写一条」限制。
  *
  * 注意：网页里只能用 WebSocket 接入 MQTT，所以要使用 EMQX 的
  *       “WebSocket over TLS/SSL 端口 8084”，地址形如 wss://xxx:8084/mqtt。
@@ -19,6 +20,9 @@ const connectBtn = document.getElementById('mqtt-connect');
 
 // 只有带这些业务字段的消息才入库，避免把无关主题的垃圾数据写进数据库
 const RAW_FIELDS = ['status', 'longitude', 'latitude'];
+
+// 紧急状态：这些消息不受「同一秒只写一条」限制，直接入库
+const URGENT_STATUS = ['dangerous'];
 
 let client = null; // 当前的 MQTT 客户端，未连接时为 null
 let config = null; // 由 main.js 传入的连接配置
@@ -155,8 +159,15 @@ async function isSecondTaken() {
 	return (await latestDbSecond()) === Math.floor(Date.now() / 1000);
 }
 
+/** 危险状态（status=dangerous）直接通过，不参与「同一秒只写一条」判重 */
+function isUrgent(record) {
+	const status = typeof record.status === 'string' ? record.status.trim().toLowerCase() : '';
+	return URGENT_STATUS.includes(status);
+}
+
+/** 同一秒只写一条（危险状态除外） */
 async function insertOncePerSecond(record) {
-	if (await isSecondTaken()) return false;
+	if (!isUrgent(record) && (await isSecondTaken())) return false;
 	await rawData.add(record);
 	return true;
 }
@@ -165,9 +176,11 @@ function saveToDb(text) {
 	const record = pickRawRecord(text);
 	if (!record) return;
 
-	// 同一秒只排一次队，避免整秒的消息风暴反复查库；真正的判重仍然看数据库
+	const urgent = isUrgent(record);
+
+	// 同一秒只排一次队，避免整秒的消息风暴反复查库；危险状态例外，直接放行
 	const second = Math.floor(Date.now() / 1000);
-	if (second === lastQueuedSecond) return;
+	if (second === lastQueuedSecond && !urgent) return;
 
 	if (!writeAllowed()) {
 		console.warn(`[MQTT] 写入超过 ${config.maxWritesPerSecond} 条/秒，已累计丢弃 ${droppedWrites} 条`);
