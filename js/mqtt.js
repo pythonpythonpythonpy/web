@@ -117,14 +117,32 @@ function appendMessage(payload) {
 	rawDataEl.scrollTop = rawDataEl.scrollHeight;
 }
 
-function saveToDb(payload) {
+async function checkData(input) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(String(input));
+  
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+  
+  return hashHex;
+}
+
+async function saveToDb(payload) {
     let data;
+	let row;
     try {
         data = JSON.parse(decodePayload(payload));
+		sha256Data = await checkData(data);
+		row = (await rawData.latest(1))[0];
+		sha256Row = await checkData(row);
+		if (sha256Data !== sha256Row) {
+			rawData.add(data).catch((err) => console.warn('写入数据库失败：', err.message));
+		}
     } catch {
         return; // 不是 JSON，只显示不入库
     }
-    rawData.add(data).catch((err) => console.warn('写入数据库失败：', err.message));
 }
 
 // ==================== 连接 ====================
